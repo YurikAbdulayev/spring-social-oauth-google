@@ -9,9 +9,7 @@ public class WebMvcConfig extends WebMvcConfigurerAdapter {
 
 	@Override
 	public void addViewControllers(ViewControllerRegistry registry) {
-		// Here, we provide a view that can be accessed by anyone (even not authenticated)
-		registry.addViewController("/").setViewName("welcome");
-		// Then, we provide a view that can *only* be accessed by an authenticated user
+		registry.addViewController("/").setViewName("login");
 		registry.addViewController("/secured").setViewName("secured");
 	}
 
@@ -22,6 +20,7 @@ public class WebMvcConfig extends WebMvcConfigurerAdapter {
 
 	@Override
 	public void addResourceHandlers(ResourceHandlerRegistry registry) {
-		registry.addResourceHandler("/resources/**").addResourceLocations("/resources/");
+		registry.addResourceHandler("/resources/**")
+				.addResourceLocations("/resources/");
 	}
 }

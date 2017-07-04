@@ -135,16 +135,12 @@ public class OAuth2ClientSecurityConfig extends WebSecurityConfigurerAdapter {
 			+ "and if there's none, acquires it from authorization server")
 	public OAuth2ClientAuthenticationProcessingFilter
 				oauth2ClientAuthenticationProcessingFilter() {
-		// Used to obtain access token from authorization server (AS)
 		OAuth2RestOperations restTemplate = new OAuth2RestTemplate(
 				authorizationCodeResource(),
 				oauth2ClientContext);
 		OAuth2ClientAuthenticationProcessingFilter filter =
 				new OAuth2ClientAuthenticationProcessingFilter(oauth2FilterCallbackPath);
 		filter.setRestTemplate(restTemplate);
-		// Set a service that validates an OAuth2 access token
-		// We can use either Google API's UserInfo or TokenInfo
-		// For this, we chose to use UserInfo service
 		filter.setTokenServices(googleUserInfoTokenServices());
 		return filter;
 	}
@@ -154,55 +150,45 @@ public class OAuth2ClientSecurityConfig extends WebSecurityConfigurerAdapter {
 	public GoogleUserInfoTokenServices googleUserInfoTokenServices() {
 		GoogleUserInfoTokenServices userInfoTokenServices =
 				new GoogleUserInfoTokenServices(userInfoUri, clientId);
-		// TODO Configure bean to use local database to read authorities
-		// userInfoTokenServices.setAuthoritiesExtractor(authoritiesExtractor);
 		return userInfoTokenServices;
 	}
 
 	@Bean
 	public AuthenticationEntryPoint authenticationEntryPoint() {
-		// May need an OAuth2AuthenticationEntryPoint for non-browser clients
 		return new LoginUrlAuthenticationEntryPoint(oauth2FilterCallbackPath);
 	}
 
 	@Override
 	public void configure(WebSecurity web) throws Exception {
 		web.ignoring().antMatchers(
-				"/", "/static/**", "/webjars/**");
+				"/", "/webjars/**", "/resources/**");
 	}
 
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
-		http.exceptionHandling()
-					.authenticationEntryPoint(authenticationEntryPoint())
-			.and()
-				.authorizeRequests()
-					.anyRequest().authenticated()
-			.and()
-				.logout()
-					.logoutUrl("/logout")
-					.logoutSuccessUrl("/")
-			/* No need for form-based login or basic authentication
-			.and()
-				.formLogin()
-					.loginPage("...")
-					.loginProcessingUrl("...")
-			.and()
-				.httpBasic()
-			 */
-			.and()
-				.addFilterAfter(
+		http
+			.exceptionHandling()
+				.authenticationEntryPoint(authenticationEntryPoint())
+				.and()
+			.authorizeRequests()
+				.anyRequest().authenticated()
+				.and()
+			.logout()
+				.logoutUrl("/logout")
+				.logoutSuccessUrl("/")
+				.and()
+			.addFilterAfter(
 					oauth2ClientContextFilter,
 					ExceptionTranslationFilter.class)
-				.addFilterBefore(
+			.addFilterBefore(
 					oauth2ClientAuthenticationProcessingFilter(),
 					FilterSecurityInterceptor.class)
-				.anonymous()
+			.anonymous()
 				// anonymous login must be disabled,
 				// otherwise an anonymous authentication will be created,
 				// and the UserRedirectRequiredException will not be thrown,
 				// and the user will not be redirected to the authorization server
-					.disable();
+				.disable();
 	}
 
 	@Override
